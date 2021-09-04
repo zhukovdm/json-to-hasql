@@ -1,0 +1,5 @@
+.vscode/
+assets/docs/ECMA-404.pdf
+*.exe
+*.hi
+*.o
