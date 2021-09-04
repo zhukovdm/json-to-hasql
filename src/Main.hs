@@ -36,7 +36,6 @@ main = do
   case rawText of
     (Left  err) -> report (Just err)
     (Right txt) -> writeDb txt
-  return ()
 
 -- | Gets database name from the user via shell.
 getDbName :: IO FilePath
@@ -64,5 +63,4 @@ writeDb txt = do
 report :: Maybe ReportedError -> IO ()
 report Nothing = pure ()
 report (Just err) = do
-  _ <- putStrLn err
-  return ()
+  putStrLn err
