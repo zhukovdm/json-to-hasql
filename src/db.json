@@ -1,0 +1,45 @@
+{
+  "databasename" : "university",
+  "databasecontent" : [
+    {
+      "tablename" : "academics",
+      "tablecontent" : [
+        {
+                    "id" : 1,
+                    "firstname" : "A",
+                    "lastname"  : "B"
+                },
+                {
+                    "id" : 2,
+                    "firstname" : "C",
+                    "lastname"  : "D"
+                },
+                {
+                    "id" : 3,
+                    "firstname" : null,
+                    "lastname"  : null
+                }
+            ]
+        },
+        {
+            "tablename" : "students",
+            "tablecontent"  : [
+                {
+                    "id" : 1000,
+                    "firstname" : "E",
+                    "lastname"  : "F"
+                },
+                {
+                    "id" : 1001,
+                    "firstname" : "G",
+                    "lastname"  : "H"
+                },
+                {
+                    "id" : 1002,
+                    "firstname" : "I",
+                    "lastname"  : "J"
+                }
+            ]
+        }
+    ]
+}
