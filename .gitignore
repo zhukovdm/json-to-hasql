@@ -1,5 +1,11 @@
+# folders
 .vscode/
+
+# skip documents
 assets/docs/ECMA-404.pdf
+assets/docs/notes.txt
+
+# binary files
 *.exe
 *.hi
 *.o

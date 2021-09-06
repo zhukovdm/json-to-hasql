@@ -1,7 +1,5 @@
 # json-to-hasql
 
-[JSON](https://www.json.org/json-en.html)
-
 ## How to start?
 
 Execute the following commands in the shell.
@@ -41,6 +39,12 @@ Supported SQL commands:
 - `select ? from table where ?`
 - ...
 
+## How to contribute?
+
+TODO
+
 ## References
 
+- [Official JSON webpage](https://www.json.org/json-en.html)
+- [JSON formatter and validator](https://jsonformatter.curiousconcept.com/#)
 - [ECMA-404. The JSON data interchange syntax](https://www.ecma-international.org/publications-and-standards/standards/ecma-404/)
