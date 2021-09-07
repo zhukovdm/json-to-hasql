@@ -25,7 +25,7 @@ data ParseError = ParseError
   }
 
 instance Show ParseError where
-  show err = "expected: " <> errorExpected err <> ", found: " <> errorFound err
+  show err = "parse error >> expected: " <> errorExpected err <> ", found: " <> errorFound err
 
 newtype Parser a = Parser
   { runParser :: String -> (String, Either ParseError a)
@@ -218,7 +218,7 @@ brackets = between (symbol "[") (symbol "]")
 braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
 
--- | Parse 'null' symbol
+-- | Parse "null" symbol
 parseNull :: Parser ()
 parseNull = do
   _ <- symbol "null"
@@ -226,6 +226,24 @@ parseNull = do
 
 -- >>> run parseNull "null"
 -- Right ()
+
+-- | Parse "true" symbol
+parseTrue :: Parser Bool
+parseTrue = do
+  _ <- symbol "true"
+  return True
+
+-- | Parse "false" symbol
+parseFalse :: Parser Bool
+parseFalse = do
+  _ <- symbol "false"
+  return False
+
+-- | Parse bool (either "true" or "false") symbol
+parseBool :: Parser Bool
+parseBool = do
+  _ <- spaces
+  choice "bool" [parseTrue, parseFalse]
 
 -- | Parse string inside \"  \"
 parseString :: Parser String
