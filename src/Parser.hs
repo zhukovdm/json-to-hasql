@@ -3,7 +3,7 @@
 
 {------------------------------------------------------------------------------}
 {-                                                                            -}
-{- This module is an exact copy of the Parser module from                     -}
+{- This module is almost an exact copy of the Parser module from              -}
 {-   https://gist.github.com/jiribenes/0cc7049355bee3b23f7ae947fa53da5e       -}
 {-                                                                            -}
 {- Parser data type is a function, that takes String and returns rest of the  -}
@@ -25,7 +25,7 @@ data ParseError = ParseError
   }
 
 instance Show ParseError where
-  show err = "Parse error >> Expected: " <> errorExpected err <> ", Found: " <> errorFound err
+  show err = "parse error >> expected: " <> errorExpected err <> ", found: " <> errorFound err
 
 newtype Parser a = Parser
   { runParser :: String -> (String, Either ParseError a)
@@ -58,9 +58,9 @@ instance Monad Parser where
       (rest, Right x)  -> runParser (f x) rest
       (rest, Left err) -> (rest, Left err)
 
--- | Parser ended up with an error, construct error
-parseError :: String -> String -> Parser a
-parseError expected found =
+-- | Introduce error if parser ended up with an error.
+introError :: String -> String -> Parser a
+introError expected found =
   Parser $ \ input -> (input, Left $ ParseError expected found)
 
 -- | Try parse with backtracking
@@ -79,16 +79,22 @@ p1 <|> p2 = Parser $ \ input ->
       | otherwise     -> (rest, Left err)
     success -> success
 
--- | Parse any character, if remained. Otherwise, error upon Eof.
-parseAny :: Parser Char
-parseAny = Parser go
+-- | Combine list of parsers, apply one by one
+choice :: String -> [Parser a] -> Parser a
+choice desc = foldr (<|>) noMatch
+  where
+    noMatch = introError desc "no match"
+
+-- | Parse any char, if remained. Otherwise, error upon Eof.
+parseChar :: Parser Char
+parseChar = Parser go
   where
     go :: String -> (String, Either ParseError Char)
     go input = case input of
       []     -> ("", Left $ ParseError "any character" "end of file")
       (x:xs) -> (xs, Right x)
 
--- | Success if EoF is found
+-- | Parse EoF (no chars ~ empty input)
 parseEof :: Parser ()
 parseEof = Parser go
   where
@@ -96,14 +102,6 @@ parseEof = Parser go
     go input = case input of
       []    -> (""   , Right ())
       (c:_) -> (input, Left $ ParseError "end of file" [c])
-
--- | Try to satisfy predicate on the letter, otherwise error.
-satisfy :: String -> (Char -> Bool) -> Parser Char
-satisfy desc p = tryParse $ do
-  c <- parseAny
-  if p c
-    then return c
-    else parseError desc [c]
 
 -- | Run parser on the input, returns either structure or error
 run :: Parser a -> String -> Either ParseError a
@@ -114,22 +112,6 @@ run p s = snd $ runParser go s
       parseEof
       return result
 
--- | Parse input char
-char :: Char -> Parser Char
-char c = satisfy [c] (== c)
-
--- | Parse any white sign (space, tab, etc.)
-space :: Parser Char
-space = satisfy "space" isSpace
-
--- | Parse any digit [0..9]
-digit :: Parser Char
-digit = satisfy "digit" isDigit
-
--- | Restart parser in a sequence 0-to-n times
-many :: Parser a -> Parser [a]
-many p = many1 p <|> return []
-
 -- | Run input parser at least once
 many1 :: Parser a -> Parser [a]
 many1 p = do
@@ -137,84 +119,103 @@ many1 p = do
   rest  <- many p
   return (first : rest)
 
--- | Try to parse a given string
-string :: String -> Parser String
-string = mapM char
+-- | Restart parser in a sequence 0-to-n times
+many :: Parser a -> Parser [a]
+many p = many1 p <|> return []
 
--- | Convert string to integer
+-- | Satisfy predicate on the char, otherwise error.
+satisfy :: String -> (Char -> Bool) -> Parser Char
+satisfy desc p = tryParse $ do
+  c <- parseChar
+  if p c
+    then return c
+    else introError desc [c]
+
+-- | Match a given char
+matchChar :: Char -> Parser Char
+matchChar c = satisfy [c] (== c)
+
+-- | Parse a white sign (space, tab, etc.)
+parseSpace :: Parser Char
+parseSpace = satisfy "space" isSpace
+
+-- | Parse multiple spaces
+parseSpaces :: Parser String
+parseSpaces = many parseSpace
+
+-- | Parse a digit [0..9]
+parseDigit :: Parser Char
+parseDigit = satisfy "digit" isDigit
+
+-- | Match a given word
+matchWord :: String -> Parser String
+matchWord = mapM matchChar
+
+-- | Convert string-to-integer
 str2int :: String -> Int
 str2int = read
 
--- | Parse multiple digits into number
+-- | Parse multiple digits into a number
 parseNumber :: Parser Int
 parseNumber = do
-  numstr <- many1 digit
-  return $ str2int numstr
+  numstr <- many1 parseDigit
+  _      <- parseSpaces
+  return $  str2int numstr
 
--- | Parse multiple spaces
-spaces :: Parser String
-spaces = many space
+-- | Match a given token (key words, such as null, etc.)
+matchToken :: String -> Parser String
+matchToken w = do
+  r <- matchWord w
+  _ <- parseSpaces -- remove spaces after
+  return r
 
--- | parse symbol ~ string, drop spaces after till end of file.
-symbol :: String -> Parser String
-symbol s = do
-  result <- string s
-  _      <- spaces
-  return result
-
--- | Parse left, between, right
-between :: Parser a -> Parser c -> Parser b -> Parser b
-between left right p = do
-  _      <- left
-  result <- p
-  _      <- right
-  return result
-
--- | Parse content between ()
-parens :: Parser a -> Parser a
-parens = between (symbol "(") (symbol ")")
-
--- | Parse content between []
-brackets :: Parser a -> Parser a
-brackets = between (symbol "[") (symbol "]")
-
--- | Parse content between {}
-braces :: Parser a -> Parser a
-braces = between (symbol "{") (symbol "}")
-
--- | Parse "null" symbol
+-- | Parse "null" token
 parseNull :: Parser ()
 parseNull = do
-  _ <- symbol "null"
+  _ <- matchToken "null"
   return ()
 
--- | Parse "true" symbol
+-- | Parse "true" token
 parseTrue :: Parser Bool
 parseTrue = do
-  _ <- symbol "true"
+  _ <- matchToken "true"
   return True
 
 -- | Parse "false" symbol
 parseFalse :: Parser Bool
 parseFalse = do
-  _ <- symbol "false"
+  _ <- matchToken "false"
   return False
 
--- | Parse bool (either "true" or "false") symbol
+-- | Parse bool (either "true" or "false")
 parseBool :: Parser Bool
 parseBool = do
-  _ <- spaces
   choice "bool" [parseTrue, parseFalse]
 
--- | Parse string inside \"  \"
-parseString :: Parser String
-parseString = between (char '"') (char '"') (many parseChar)
-  where
-    parseChar = satisfy "not a quote" (/= '"')
+-- | Parse left-between-right
+between :: Parser a -> Parser c -> Parser b -> Parser b
+between left right p = do
+  _ <- left
+  r <- p
+  _ <- right
+  return r
 
--- | Parse items divided by separator by corr. parsers, apply 0-to-n times
-sepBy :: Parser a -> Parser sep -> Parser [a]
-sepBy p s = sepBy1 p s <|> return []
+-- | Parse quote inside \"  \", ditto " inside are not allowed
+parseQuote :: Parser String
+parseQuote = do
+  r <- between (matchChar '"') (matchChar '"') (many notQuote)
+  _ <- parseSpaces
+  return r
+    where
+      notQuote = satisfy "not a quote" (/= '"')
+
+-- | Parse content within [..]
+brackets :: Parser a -> Parser a
+brackets = between (matchToken "[") (matchToken "]")
+
+-- | Parse content within {..}
+braces :: Parser a -> Parser a
+braces = between (matchToken "{") (matchToken "}")
 
 -- | Parse items divided by separator by corr. parsers at least once.
 sepBy1 :: Parser a -> Parser sep -> Parser [a]
@@ -223,12 +224,22 @@ sepBy1 p s = do
   rest  <- many (s >> p)
   return (first : rest)
 
--- | Parse list of items in [] divided by comma
-parseListOf :: Parser a -> Parser [a]
-parseListOf p = brackets $ p `sepBy` symbol ","
+-- | Parse items divided by separator by corr. parsers, apply 0-to-n times
+sepBy :: Parser a -> Parser sep -> Parser [a]
+sepBy p s = sepBy1 p s <|> return []
 
--- | Combine list of parsers, apply one by one
-choice :: String -> [Parser a] -> Parser a
-choice desc = foldr (<|>) noMatch
-  where
-    noMatch = parseError desc "no match"
+-- | Parse items inside [.., ..] separated by comma
+parseBracketsOf :: Parser a -> Parser [a]
+parseBracketsOf p = brackets $ p `sepBy` matchToken ","
+
+-- | Parse items within {.., ..} separated by comma
+parseBracesOf :: Parser a -> Parser [a]
+parseBracesOf p = braces $ p `sepBy` matchToken ","
+
+-- | Parse key-value separated by a colon
+parseKeyVal :: Parser a -> Parser (String, a)
+parseKeyVal p = do
+  key <- parseQuote
+  _   <- matchToken ":"
+  val <- p
+  return (key, val)

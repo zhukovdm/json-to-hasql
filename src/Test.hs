@@ -3,97 +3,100 @@
 -- this file is created solely for testing purposes
 
 import Parser
-  ( char
-  , digit
-  , many
-  , space
-  , spaces
-  , string
-  , str2int
-  , symbol
-  , parens
+  ( parseChar
+  , parseEof
+  , matchChar
+  , parseSpace
+  , parseSpaces
+  , parseDigit
+  , matchWord
+  , parseNumber
   , parseNull
   , parseBool
-  , parseString
-  , parseNumber
-  , parseListOf
+  , parseQuote
+  , parseBracesOf
+  , parseBracketsOf
+  , parseKeyVal
   , run
   )
 
 import Json
-  ( parseJson
+  ( parseJsonValue
   )
 
 {------------------------------------------------------------------------------}
 {- Parser.hs                                                                  -}
 {------------------------------------------------------------------------------}
 
--- >>> run (char 'a') "a"
+-- >>> run parseChar "a"
 -- Right 'a'
 
--- >>> run space " "
--- Right ' '
+-- >>> run parseEof ""
+-- Right ()
 
--- >>> run digit "0"
--- Right '0'
+-- >>> run (matchChar 'a') "a"
+-- Right 'a'
 
--- >>> run (many digit) ""
--- Right ""
+-- >>> run parseSpace " $"
+-- Left parse error >> expected: end of file, found: $
 
--- >>> run (many digit) "123456"
--- Right "123456"
-
--- >>> run (string "word") "word"
--- Right "word"
-
--- >>> str2int "123"
--- 123
-
--- >>> run parseNumber "123"
--- Right 123
-
--- >>> run spaces "   "
+-- >>> run parseSpaces "   "
 -- Right "   "
 
--- >>> run (symbol "word") "word   "
--- Right "word"
+-- >>> run parseDigit "0"
+-- Right '0'
 
--- >>> run (symbol "word") "word  $"
--- Left Parse error >> Expected: end of file, Found: $
+-- >>> run (matchWord "word") "word$"
+-- Left parse error >> expected: end of file, found: $
 
--- >>> run (parens (many digit)) "(123)"
--- Right "123"
+-- >>> run parseNumber "123 "
+-- Right 123
 
 -- >>> run parseNull "null"
--- Right ()
+-- Left parse error >> expected: n, found:  
 
 -- >>> run parseBool "true"
 -- Right True
 
--- >>> run parseString "\"word\""
--- Right "word"
+-- >>> run parseQuote "\"abc\""
+-- Right "abc"
 
--- >>> run parseNumber "123"
--- Right 123
+-- >>> run (parseBracketsOf parseNumber) "[1, 2, 3]"
+-- Right [1,2,3]
 
--- >>> run (parseListOf parseNumber) "[1,2]"
--- Right [1,2]
+-- >>> run (parseBracesOf parseBool) "{ true, false }"
+-- Right [True,False]
+
+-- >>> run (parseKeyVal parseNumber) "\"abc\" : 1"
+-- Right ("abc",1)
+
+-- >>> run (parseBracesOf (parseKeyVal parseNumber)) "{ \"abc\" : 1 , \"def\" : 2 }"
+-- Right [("abc",1),("def",2)]
 
 {------------------------------------------------------------------------------}
 {- Json.hs                                                                    -}
 {------------------------------------------------------------------------------}
 
--- >>> run parseJson "null"
+-- >>> run parseJsonValue "null"
 -- Right JsonNull
 
--- >>> run parseJson "true"
+-- >>> run parseJsonValue "true"
 -- Right (JsonBool True)
 
--- >>> run parseJson "\"word\""
+-- >>> run parseJsonValue "\"word\""
 -- Right (JsonString "word")
 
--- >>> run parseJson "123456"
+-- >>> run parseJsonValue "123456"
 -- Right (JsonNumber 123456)
+
+-- >>> run parseJsonValue "[]"
+-- Right (JsonArray [])
+
+-- >>> run parseJsonValue "[null,true,\"a\",1]"
+-- Right (JsonArray [JsonNull,JsonBool True,JsonString "a",JsonNumber 1])
+
+-- >>> run parseJsonValue "{ \"abc\" : true, \"def\" : null }"
+-- Right (JsonObject [("abc",JsonBool True),("def",JsonNull)])
 
 {------------------------------------------------------------------------------}
 {- Sql.hs                                                                     -}

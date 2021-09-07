@@ -6,11 +6,14 @@ module Json where
 import Parser
   ( Parser
   , choice
+  , parseSpaces
   , parseNull
   , parseBool
-  , parseString
+  , parseQuote
   , parseNumber
-  , spaces
+  , parseBracesOf
+  , parseBracketsOf
+  , parseKeyVal
   )
 
 data JsonValue = JsonNull
@@ -21,13 +24,15 @@ data JsonValue = JsonNull
                | JsonObject [(String, JsonValue)]
   deriving (Show)
 
--- | Parse Json structure from string
-parseJson :: Parser JsonValue
-parseJson =  do
-  _ <- spaces
+-- | Parse Json Value from a given string
+parseJsonValue :: Parser JsonValue
+parseJsonValue =  do
+  _ <- parseSpaces
   choice "json value"
     [ JsonNull   <$  parseNull
     , JsonBool   <$> parseBool
-    , JsonString <$> parseString
+    , JsonString <$> parseQuote
     , JsonNumber <$> parseNumber
+    , JsonArray  <$> parseBracketsOf parseJsonValue
+    , JsonObject <$> parseBracesOf (parseKeyVal parseJsonValue)
     ]
