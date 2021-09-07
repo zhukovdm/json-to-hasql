@@ -31,15 +31,3 @@ parseJson =  do
     , JsonString <$> parseString
     , JsonNumber <$> parseNumber
     ]
-
--- >>> Parser.run parseJson "null"
--- Right JsonNull
-
--- >>> Parser.run parseJson "true"
--- Right (JsonBool True)
-
--- >>> Parser.run parseJson "\"word\""
--- Right (JsonString "word")
-
--- >>> Parser.run parseJson "123456"
--- Right (JsonNumber 123456)

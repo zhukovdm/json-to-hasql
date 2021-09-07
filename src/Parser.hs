@@ -25,7 +25,7 @@ data ParseError = ParseError
   }
 
 instance Show ParseError where
-  show err = "parse error >> expected: " <> errorExpected err <> ", found: " <> errorFound err
+  show err = "Parse error >> Expected: " <> errorExpected err <> ", Found: " <> errorFound err
 
 newtype Parser a = Parser
   { runParser :: String -> (String, Either ParseError a)
@@ -88,7 +88,7 @@ parseAny = Parser go
       []     -> ("", Left $ ParseError "any character" "end of file")
       (x:xs) -> (xs, Right x)
 
--- | Parser succeeds if EoF is found.
+-- | Success if EoF is found
 parseEof :: Parser ()
 parseEof = Parser go
   where
@@ -105,7 +105,7 @@ satisfy desc p = tryParse $ do
     then return c
     else parseError desc [c]
 
--- | Run parser on the input, returns either structure or error.
+-- | Run parser on the input, returns either structure or error
 run :: Parser a -> String -> Either ParseError a
 run p s = snd $ runParser go s
   where
@@ -118,22 +118,13 @@ run p s = snd $ runParser go s
 char :: Char -> Parser Char
 char c = satisfy [c] (== c)
 
--- >>> run (char 'a') "a"
--- Right 'c'
-
 -- | Parse any white sign (space, tab, etc.)
 space :: Parser Char
 space = satisfy "space" isSpace
 
--- >>> run space " "
--- Right ' '
-
 -- | Parse any digit [0..9]
 digit :: Parser Char
 digit = satisfy "digit" isDigit
-
--- >>> run digit "0"
--- Right '0'
 
 -- | Restart parser in a sequence 0-to-n times
 many :: Parser a -> Parser [a]
@@ -146,25 +137,13 @@ many1 p = do
   rest  <- many p
   return (first : rest)
 
--- >>> run (many digit) ""
--- Right ""
-
--- >>> run (many digit) "123456"
--- Right "123456"
-
 -- | Try to parse a given string
 string :: String -> Parser String
 string = mapM char
 
--- >>> run (string "word") "word"
--- Right "word"
-
 -- | Convert string to integer
 str2int :: String -> Int
 str2int = read
-
--- >>> str2int "123"
--- 123
 
 -- | Parse multiple digits into number
 parseNumber :: Parser Int
@@ -172,15 +151,9 @@ parseNumber = do
   numstr <- many1 digit
   return $ str2int numstr
 
--- >>> run number "123"
--- Right 123
-
 -- | Parse multiple spaces
 spaces :: Parser String
 spaces = many space
-
--- >>> run spaces "   "
--- Right "   "
 
 -- | parse symbol ~ string, drop spaces after till end of file.
 symbol :: String -> Parser String
@@ -188,12 +161,6 @@ symbol s = do
   result <- string s
   _      <- spaces
   return result
-
--- >>> run (symbol "word") "word   "
--- Right "word"
-
--- >>> run (symbol "word") "word  $"
--- Left expected: end of file, found: $
 
 -- | Parse left, between, right
 between :: Parser a -> Parser c -> Parser b -> Parser b
@@ -206,9 +173,6 @@ between left right p = do
 -- | Parse content between ()
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
-
--- >>> run (parens (many digit)) "(123)"
--- Right "123"
 
 -- | Parse content between []
 brackets :: Parser a -> Parser a
@@ -223,9 +187,6 @@ parseNull :: Parser ()
 parseNull = do
   _ <- symbol "null"
   return ()
-
--- >>> run parseNull "null"
--- Right ()
 
 -- | Parse "true" symbol
 parseTrue :: Parser Bool
@@ -251,12 +212,9 @@ parseString = between (char '"') (char '"') (many parseChar)
   where
     parseChar = satisfy "not a quote" (/= '"')
 
--- >>> run parseString "\"word\""
--- Right "word"
-
 -- | Parse items divided by separator by corr. parsers, apply 0-to-n times
 sepBy :: Parser a -> Parser sep -> Parser [a]
-sepBy  p s = sepBy1 p s <|> return []
+sepBy p s = sepBy1 p s <|> return []
 
 -- | Parse items divided by separator by corr. parsers at least once.
 sepBy1 :: Parser a -> Parser sep -> Parser [a]
@@ -268,9 +226,6 @@ sepBy1 p s = do
 -- | Parse list of items in [] divided by comma
 parseListOf :: Parser a -> Parser [a]
 parseListOf p = brackets $ p `sepBy` symbol ","
-
--- >>> run (parseListOf number) "[1,2]"
--- Right [1,2]
 
 -- | Combine list of parsers, apply one by one
 choice :: String -> [Parser a] -> Parser a
