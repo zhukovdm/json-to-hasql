@@ -18,14 +18,20 @@ import System.IO
   )
 
 import Json
-  ( parseJson
+  ( JsonValue(..)
+  , parseJson
   )
 
-type ReadError = String
+import Parser
+  ( run
+  )
 
-type ReportedError = String
-
-type RawText = String
+import Sql
+  ( SqlRequest(..)
+  , tryApplyReq
+  , pSqlRequest
+  , validateJson
+  )
 
 -- | Top-level function
 main :: IO ()
@@ -33,30 +39,52 @@ main = do
   dbNames <- getArgs
   rawText <- tryReadDb dbNames
   case rawText of
-    (Left  err) -> report (Just err)
+    (Left  err) -> report $ Just err
     (Right txt) -> do
-      json <- parseJson txt
-      case json of
-        (Left err) -> report (Just err)
-        (Right jv) -> writeDb (show jv)
+      pj <- parseJson txt
+      case pj of
+        (Left err) -> report $ Just err
+        (Right jv) -> do
+          let v = validateJson jv
+          if v then do
+            _ <- putStrLn "database is ready! proceed with requests."
+            getReq jv
+          else
+            report $ Just "database format is not valid"
 
 dbAddr :: String
 dbAddr = "dbs/"
 
 -- | Returns string describing invalid arguments
-invalidArgs :: IO (Either ReadError RawText)
+invalidArgs :: IO (Either String String)
 invalidArgs = return $ Left "invalid arguments"
 
 -- | Reads entire database file as raw text if possible, otherwise error.
-tryReadDb :: [FilePath] -> IO (Either ReadError RawText)
+tryReadDb :: [FilePath] -> IO (Either String String)
 tryReadDb [] = invalidArgs
 tryReadDb [dbName] =
   handle (\ (_ :: IOException) -> return $ Left ("not possible to read " <> dbName)) $ do
     Right <$> readFile (dbAddr <> dbName)
 tryReadDb _ = invalidArgs -- more than one argument
 
+-- | Get request and pass for processing
+getReq :: JsonValue -> IO ()
+getReq jv = do
+  i <- getLine
+  let r = run pSqlRequest i
+  case r of
+    (Left err) -> do
+      _ <- report $ Just (show err)
+      getReq jv
+    (Right req) -> do
+      case req of
+        SqlExit -> writeDb (show jv)
+        _ -> do
+          newjv <- tryApplyReq req jv
+          getReq newjv
+
 -- | Asks name, try to open and write, repeat if failure.
-writeDb :: RawText -> IO ()
+writeDb :: String -> IO ()
 writeDb txt = do
   handle (\ (_ :: IOException) -> writeDb txt) $ do
     _      <- putStr "enter output db name: "
@@ -65,7 +93,7 @@ writeDb txt = do
     writeFile (dbAddr <> dbName) txt
 
 -- | Report read or parser error, if arrises.
-report :: Maybe ReportedError -> IO ()
+report :: Maybe String -> IO ()
 report Nothing = pure ()
 report (Just err) = do
   putStrLn err

@@ -175,13 +175,19 @@ pNull = do
   _ <- matchToken "null"
   return ()
 
+-- | Parse "exit" token
+pExit :: Parser ()
+pExit = do
+  _ <- matchToken "exit"
+  return ()
+
 -- | Parse "true" token
 pTrue :: Parser Bool
 pTrue = do
   _ <- matchToken "true"
   return True
 
--- | Parse "false" symbol
+-- | Parse "false" token
 pFalse :: Parser Bool
 pFalse = do
   _ <- matchToken "false"
@@ -228,11 +234,11 @@ sepBy1 p s = do
 sepBy :: Parser a -> Parser sep -> Parser [a]
 sepBy p s = sepBy1 p s <|> return []
 
--- | Parse items inside [.., ..] separated by comma
+-- | Parse items inside [.., ..] separated by a comma
 pBracketsOf :: Parser a -> Parser [a]
 pBracketsOf p = brackets $ p `sepBy` matchToken ","
 
--- | Parse items within {.., ..} separated by comma
+-- | Parse items within {.., ..} separated by a comma
 pBracesOf :: Parser a -> Parser [a]
 pBracesOf p = braces $ p `sepBy` matchToken ","
 

@@ -1,15 +1,16 @@
 {
-  "name" : "city",
+  "name"    : "city",
   "content" : [
     {
-      "table" : "people",
+      "*"     : "people",
       "id"    : [1, 2, 3],
-      "name"  : ["Alice", "Bob", "Carrol"]
+      "name"  : ["Alice", "Bob", "Carrol"],
+      "adult" : [true, true, false]
     },
     {
-      "table" : "streets",
-      "id"    : [1, 2, 3],
-      "name"  : ["1st ave", "2nd ave", "3rd ave"]
+      "*"    : { "name" : "streets", "scheme" : [ "number", "string" ] },
+      "id"   : [1, 2, 3],
+      "name" : ["1st ave", "2nd ave", "3rd ave"]
     }
   ]
 }
