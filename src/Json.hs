@@ -3,9 +3,9 @@
 
 module Json where
 
-import General
-  ( joinArr
-  )
+-- import General
+--   ( joinArr
+--   )
 
 import Parser
   ( Parser
@@ -28,6 +28,10 @@ data JsonValue = JsonNull
                | JsonArray  [JsonValue]
                | JsonObject [(String, JsonValue)]
 
+json2str :: JsonValue -> String -> String
+json2str j "" = show j
+json2str j s  = show j <> "," <> s
+
 showJsonItem :: (String, JsonValue) -> String
 showJsonItem (k, v) = show k <> ":" <> show v
 
@@ -37,8 +41,8 @@ instance Show JsonValue where
   show (JsonBool    b) = if b then "true" else "false"
   show (JsonString  s) = show s
   show (JsonNumber  n) = show n
-  show (JsonArray  xs) = "[" <> joinArr show         "," xs <> "]"
-  show (JsonObject xs) = "{" <> joinArr showJsonItem "," xs <> "}"
+  show (JsonArray  xs) = "[" <> foldr  json2str      [] xs <> "]"
+  show (JsonObject xs) = "{" <> foldr (json2str.snd) [] xs <> "}"
 
 -- | Parse Json Value from a given string
 pJsonValue :: Parser JsonValue
