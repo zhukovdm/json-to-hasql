@@ -1,45 +1,15 @@
 {
-  "databasename" : "university",
-  "databasecontent" : [
+  "name" : "city",
+  "content" : [
     {
-      "tablename" : "academics",
-      "tablecontent" : [
-        {
-                    "id" : 1,
-                    "firstname" : "A",
-                    "lastname"  : "B"
-                },
-                {
-                    "id" : 2,
-                    "firstname" : "C",
-                    "lastname"  : "D"
-                },
-                {
-                    "id" : 3,
-                    "firstname" : null,
-                    "lastname"  : null
-                }
-            ]
-        },
-        {
-            "tablename" : "students",
-            "tablecontent"  : [
-                {
-                    "id" : 1000,
-                    "firstname" : "E",
-                    "lastname"  : "F"
-                },
-                {
-                    "id" : 1001,
-                    "firstname" : "G",
-                    "lastname"  : "H"
-                },
-                {
-                    "id" : 1002,
-                    "firstname" : "I",
-                    "lastname"  : "J"
-                }
-            ]
-        }
-    ]
+      "table" : "people",
+      "id"    : [1, 2, 3],
+      "name"  : ["Alice", "Bob", "Carrol"]
+    },
+    {
+      "table" : "streets",
+      "id"    : [1, 2, 3],
+      "name"  : ["1st ave", "2nd ave", "3rd ave"]
+    }
+  ]
 }

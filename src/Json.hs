@@ -14,6 +14,7 @@ import Parser
   , pBracesOf
   , pBracketsOf
   , pKeyVal
+  , run
   )
 
 data JsonValue = JsonNull
@@ -26,7 +27,7 @@ data JsonValue = JsonNull
 
 -- | Parse Json Value from a given string
 pJsonValue :: Parser JsonValue
-pJsonValue =  do
+pJsonValue = do
   _ <- pSpaces
   choice "json value"
     [ JsonNull   <$  pNull
@@ -36,3 +37,10 @@ pJsonValue =  do
     , JsonArray  <$> pBracketsOf pJsonValue
     , JsonObject <$> pBracesOf (pKeyVal pJsonValue)
     ]
+
+parseJson :: String -> IO (Either String JsonValue)
+parseJson s = do
+  let r = run pJsonValue s
+  case r of
+    (Left  e) -> return $ Left (show e)
+    (Right v) -> return $ Right v

@@ -1,9 +1,13 @@
 # folders
 .vscode/
 
-# skip documents
+# documents
 assets/docs/ECMA-404.pdf
 assets/docs/notes.txt
+
+# ignore db files
+src/dbs/*
+!src/dbs/db.json
 
 # binary files
 *.exe
