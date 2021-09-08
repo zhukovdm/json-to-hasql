@@ -3,99 +3,99 @@
 -- this file is created solely for testing purposes
 
 import Parser
-  ( parseChar
-  , parseEof
+  ( pChar
+  , pEof
   , matchChar
-  , parseSpace
-  , parseSpaces
-  , parseDigit
+  , pSpace
+  , pSpaces
+  , pDigit
   , matchWord
-  , parseNumber
-  , parseNull
-  , parseBool
-  , parseQuote
-  , parseBracesOf
-  , parseBracketsOf
-  , parseKeyVal
+  , pNumber
+  , pNull
+  , pBool
+  , pQuote
+  , pBracesOf
+  , pBracketsOf
+  , pKeyVal
   , run
   )
 
 import Json
-  ( parseJsonValue
+  ( pJsonValue
   )
 
 {------------------------------------------------------------------------------}
 {- Parser.hs                                                                  -}
 {------------------------------------------------------------------------------}
 
--- >>> run parseChar "a"
+-- >>> run pChar "a"
 -- Right 'a'
 
--- >>> run parseEof ""
+-- >>> run pEof ""
 -- Right ()
 
 -- >>> run (matchChar 'a') "a"
 -- Right 'a'
 
--- >>> run parseSpace " $"
+-- >>> run pSpace " $"
 -- Left parse error >> expected: end of file, found: $
 
--- >>> run parseSpaces "   "
+-- >>> run pSpaces "   "
 -- Right "   "
 
--- >>> run parseDigit "0"
+-- >>> run pDigit "0"
 -- Right '0'
 
 -- >>> run (matchWord "word") "word$"
 -- Left parse error >> expected: end of file, found: $
 
--- >>> run parseNumber "123 "
+-- >>> run pNumber "123 "
 -- Right 123
 
--- >>> run parseNull "null"
--- Left parse error >> expected: n, found:  
+-- >>> run pNull "null"
+-- Right ()
 
--- >>> run parseBool "true"
+-- >>> run pBool "true"
 -- Right True
 
--- >>> run parseQuote "\"abc\""
+-- >>> run pQuote "\"abc\""
 -- Right "abc"
 
--- >>> run (parseBracketsOf parseNumber) "[1, 2, 3]"
+-- >>> run (pBracketsOf pNumber) "[1, 2, 3]"
 -- Right [1,2,3]
 
--- >>> run (parseBracesOf parseBool) "{ true, false }"
+-- >>> run (pBracesOf pBool) "{ true, false }"
 -- Right [True,False]
 
--- >>> run (parseKeyVal parseNumber) "\"abc\" : 1"
+-- >>> run (pKeyVal pNumber) "\"abc\" : 1"
 -- Right ("abc",1)
 
--- >>> run (parseBracesOf (parseKeyVal parseNumber)) "{ \"abc\" : 1 , \"def\" : 2 }"
+-- >>> run (pBracesOf (pKeyVal pNumber)) "{ \"abc\" : 1 , \"def\" : 2 }"
 -- Right [("abc",1),("def",2)]
 
 {------------------------------------------------------------------------------}
 {- Json.hs                                                                    -}
 {------------------------------------------------------------------------------}
 
--- >>> run parseJsonValue "null"
+-- >>> run pJsonValue "null"
 -- Right JsonNull
 
--- >>> run parseJsonValue "true"
+-- >>> run pJsonValue "true"
 -- Right (JsonBool True)
 
--- >>> run parseJsonValue "\"word\""
+-- >>> run pJsonValue "\"word\""
 -- Right (JsonString "word")
 
--- >>> run parseJsonValue "123456"
+-- >>> run pJsonValue "123456"
 -- Right (JsonNumber 123456)
 
--- >>> run parseJsonValue "[]"
+-- >>> run pJsonValue "[]"
 -- Right (JsonArray [])
 
--- >>> run parseJsonValue "[null,true,\"a\",1]"
--- Right (JsonArray [JsonNull,JsonBool True,JsonString "a",JsonNumber 1])
+-- >>> run pJsonValue "[null,true,\"a\",0]"
+-- Right (JsonArray [JsonNull,JsonBool True,JsonString "a",JsonNumber 0])
 
--- >>> run parseJsonValue "{ \"abc\" : true, \"def\" : null }"
+-- >>> run pJsonValue "{ \"abc\" : true, \"def\" : null }"
 -- Right (JsonObject [("abc",JsonBool True),("def",JsonNull)])
 
 {------------------------------------------------------------------------------}

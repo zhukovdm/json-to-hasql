@@ -86,8 +86,8 @@ choice desc = foldr (<|>) noMatch
     noMatch = introError desc "no match"
 
 -- | Parse any char, if remained. Otherwise, error upon Eof.
-parseChar :: Parser Char
-parseChar = Parser go
+pChar :: Parser Char
+pChar = Parser go
   where
     go :: String -> (String, Either ParseError Char)
     go input = case input of
@@ -95,8 +95,8 @@ parseChar = Parser go
       (x:xs) -> (xs, Right x)
 
 -- | Parse EoF (no chars ~ empty input)
-parseEof :: Parser ()
-parseEof = Parser go
+pEof :: Parser ()
+pEof = Parser go
   where
     go :: String -> (String, Either ParseError ())
     go input = case input of
@@ -109,7 +109,7 @@ run p s = snd $ runParser go s
   where
     go = do
       result <- p
-      parseEof
+      pEof
       return result
 
 -- | Run input parser at least once
@@ -126,7 +126,7 @@ many p = many1 p <|> return []
 -- | Satisfy predicate on the char, otherwise error.
 satisfy :: String -> (Char -> Bool) -> Parser Char
 satisfy desc p = tryParse $ do
-  c <- parseChar
+  c <- pChar
   if p c
     then return c
     else introError desc [c]
@@ -136,16 +136,16 @@ matchChar :: Char -> Parser Char
 matchChar c = satisfy [c] (== c)
 
 -- | Parse a white sign (space, tab, etc.)
-parseSpace :: Parser Char
-parseSpace = satisfy "space" isSpace
+pSpace :: Parser Char
+pSpace = satisfy "space" isSpace
 
 -- | Parse multiple spaces
-parseSpaces :: Parser String
-parseSpaces = many parseSpace
+pSpaces :: Parser String
+pSpaces = many pSpace
 
 -- | Parse a digit [0..9]
-parseDigit :: Parser Char
-parseDigit = satisfy "digit" isDigit
+pDigit :: Parser Char
+pDigit = satisfy "digit" isDigit
 
 -- | Match a given word
 matchWord :: String -> Parser String
@@ -156,41 +156,41 @@ str2int :: String -> Int
 str2int = read
 
 -- | Parse multiple digits into a number
-parseNumber :: Parser Int
-parseNumber = do
-  numstr <- many1 parseDigit
-  _      <- parseSpaces
+pNumber :: Parser Int
+pNumber = do
+  numstr <- many1 pDigit
+  _      <- pSpaces
   return $  str2int numstr
 
 -- | Match a given token (key words, such as null, etc.)
 matchToken :: String -> Parser String
 matchToken w = do
   r <- matchWord w
-  _ <- parseSpaces -- remove spaces after
+  _ <- pSpaces -- remove spaces after
   return r
 
 -- | Parse "null" token
-parseNull :: Parser ()
-parseNull = do
+pNull :: Parser ()
+pNull = do
   _ <- matchToken "null"
   return ()
 
 -- | Parse "true" token
-parseTrue :: Parser Bool
-parseTrue = do
+pTrue :: Parser Bool
+pTrue = do
   _ <- matchToken "true"
   return True
 
 -- | Parse "false" symbol
-parseFalse :: Parser Bool
-parseFalse = do
+pFalse :: Parser Bool
+pFalse = do
   _ <- matchToken "false"
   return False
 
 -- | Parse bool (either "true" or "false")
-parseBool :: Parser Bool
-parseBool = do
-  choice "bool" [parseTrue, parseFalse]
+pBool :: Parser Bool
+pBool = do
+  choice "bool" [pTrue, pFalse]
 
 -- | Parse left-between-right
 between :: Parser a -> Parser c -> Parser b -> Parser b
@@ -201,10 +201,10 @@ between left right p = do
   return r
 
 -- | Parse quote inside \"  \", ditto " inside are not allowed
-parseQuote :: Parser String
-parseQuote = do
+pQuote :: Parser String
+pQuote = do
   r <- between (matchChar '"') (matchChar '"') (many notQuote)
-  _ <- parseSpaces
+  _ <- pSpaces
   return r
     where
       notQuote = satisfy "not a quote" (/= '"')
@@ -229,17 +229,17 @@ sepBy :: Parser a -> Parser sep -> Parser [a]
 sepBy p s = sepBy1 p s <|> return []
 
 -- | Parse items inside [.., ..] separated by comma
-parseBracketsOf :: Parser a -> Parser [a]
-parseBracketsOf p = brackets $ p `sepBy` matchToken ","
+pBracketsOf :: Parser a -> Parser [a]
+pBracketsOf p = brackets $ p `sepBy` matchToken ","
 
 -- | Parse items within {.., ..} separated by comma
-parseBracesOf :: Parser a -> Parser [a]
-parseBracesOf p = braces $ p `sepBy` matchToken ","
+pBracesOf :: Parser a -> Parser [a]
+pBracesOf p = braces $ p `sepBy` matchToken ","
 
 -- | Parse key-value separated by a colon
-parseKeyVal :: Parser a -> Parser (String, a)
-parseKeyVal p = do
-  key <- parseQuote
+pKeyVal :: Parser a -> Parser (String, a)
+pKeyVal p = do
+  key <- pQuote
   _   <- matchToken ":"
   val <- p
   return (key, val)
