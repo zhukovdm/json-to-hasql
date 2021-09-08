@@ -3,6 +3,10 @@
 
 module Json where
 
+import General
+  ( joinArr
+  )
+
 import Parser
   ( Parser
   , choice
@@ -23,7 +27,18 @@ data JsonValue = JsonNull
                | JsonNumber Int
                | JsonArray  [JsonValue]
                | JsonObject [(String, JsonValue)]
-  deriving (Show)
+
+showJsonItem :: (String, JsonValue) -> String
+showJsonItem (k, v) = show k <> ":" <> show v
+
+instance Show JsonValue where
+
+  show JsonNull        = "null"
+  show (JsonBool    b) = if b then "true" else "false"
+  show (JsonString  s) = show s
+  show (JsonNumber  n) = show n
+  show (JsonArray  xs) = "[" <> joinArr show         "," xs <> "]"
+  show (JsonObject xs) = "{" <> joinArr showJsonItem "," xs <> "}"
 
 -- | Parse Json Value from a given string
 pJsonValue :: Parser JsonValue
@@ -42,5 +57,5 @@ parseJson :: String -> IO (Either String JsonValue)
 parseJson s = do
   let r = run pJsonValue s
   case r of
-    (Left  e) -> return $ Left (show e)
-    (Right v) -> return $ Right v
+    (Left err) -> return $ Left (show err)
+    (Right jv) -> return $ Right jv
