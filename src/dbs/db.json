@@ -1,16 +1,33 @@
 {
-  "name"    : "city",
-  "content" : [
+  "database" : "org",
+  "content"  : [
     {
-      "*"     : "people",
-      "id"    : [1, 2, 3],
-      "name"  : ["Alice", "Bob", "Carrol"],
-      "adult" : [true, true, false]
+      "table"   : "people",
+      "content" : [
+        ["firstname", "surname", "age"],
+        ["Alice",     "Spark",   25   ],
+        ["Alice",     null,      42   ],
+        ["Bob",       "Johnson", 31   ],
+        ["Carrol",    "Smith",   18   ]
+      ]
     },
     {
-      "*"    : { "name" : "streets", "scheme" : [ "number", "string" ] },
-      "id"   : [1, 2, 3],
-      "name" : ["1st ave", "2nd ave", "3rd ave"]
+      "table"   : "fruits",
+      "content" : [
+        ["color",  "fruit", "price"],
+        ["green",  "apple",   5],
+        ["yellow", "banana", 10],
+        ["yellow", "melon",  20],
+        ["red",    "cherry", 15]
+      ]
+    },
+    {
+      "table" : "likes",
+      "content" : [
+        ["firstname", "fruit" ],
+        ["Alice",     "apple" ],
+        ["Bob",       "cherry"]
+      ]
     }
   ]
 }

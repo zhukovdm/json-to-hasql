@@ -23,15 +23,18 @@ pSqlRequest = do
     [ SqlExit <$ pExit
     ]
 
-isSqlValidScheme :: [(String, JsonValue)] -> Bool
-isSqlValidScheme _ = True
+isHdrValid :: String -> (String, JsonValue) -> Bool
+isHdrValid h1 ((JsonString h2)) = h1 == h2
+isHdrValid _  _ = False
 
-isSqlValidContent :: [(String, JsonValue)] -> Bool
-isSqlValidContent _ = True
+isConValid :: String -> 
 
-validateJson :: JsonValue -> Bool
-validateJson (JsonObject o) = isSqlValidScheme o && isSqlValidContent o
-validateJson _ = False
+
+-- | Traverse the input Json structure to verify scheme
+isDbValid :: JsonValue -> Bool
+isDbValid (JsonObject header:content:[]) =
+  isHdrValid "database" header &&
+isDbValid _ = False
 
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: SqlRequest -> JsonValue -> IO JsonValue

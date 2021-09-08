@@ -28,9 +28,9 @@ import Parser
 
 import Sql
   ( SqlRequest(..)
+  , isDbValid
   , tryApplyReq
   , pSqlRequest
-  , validateJson
   )
 
 -- | Top-level function
@@ -45,7 +45,7 @@ main = do
       case pj of
         (Left err) -> report $ Just err
         (Right jv) -> do
-          let v = validateJson jv
+          let v = isDbValid jv
           if v then do
             _ <- putStrLn "database is ready! proceed with requests."
             getReq jv
@@ -74,11 +74,11 @@ getReq jv = do
   let r = run pSqlRequest i
   case r of
     (Left err) -> do
-      _ <- report $ Just (show err)
+      _ <- report $ Just $ show err
       getReq jv
     (Right req) -> do
       case req of
-        SqlExit -> writeDb (show jv)
+        SqlExit -> writeDb $ show jv
         _ -> do
           newjv <- tryApplyReq req jv
           getReq newjv
