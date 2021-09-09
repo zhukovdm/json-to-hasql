@@ -23,11 +23,12 @@ import Parser
 
 import Json
   ( JsonValue(..)
+  , pJsonValue
   )
 
 data Request = ReqShowTable String
-             | ReqSelectFrom ([String], String)
-             | ReqFindWith (String, JsonValue)
+             | ReqPickFrom ([String], String)   -- columns selection
+             | ReqFindWith (String, JsonValue)  -- rows selection
              | ReqSetToIn
              | ReqExit
   deriving (Show)
@@ -40,22 +41,33 @@ pReqShowTable = do
   _ <- matchToken "show"
   many1 il
 
-pReqSelectFrom :: Parser ([String], String)
-pReqSelectFrom = do
-  _ <- matchToken "select"
+pReqPickFrom :: Parser ([String], String)
+pReqPickFrom = do
+  _ <- matchToken "pick"
   c <- many1 il `sepBy` matchToken ","
   _ <- pSpaces
   _ <- matchToken "from"
   t <- many1 il
+  _ <- pSpaces
   return (c, t)
+
+pReqFindWith :: Parser (String, JsonValue)
+pReqFindWith = do
+  _ <- matchToken "find"
+  t <- many1 il
+  _ <- pSpaces
+  _ <- matchToken "with"
+  j <- pJsonValue
+  return (t, j)
 
 pReq :: Parser Request
 pReq = do
   _ <- pSpaces
   choice "request"
-    [ ReqShowTable  <$> pReqShowTable
-    , ReqSelectFrom <$> pReqSelectFrom
-    , ReqExit       <$  pExit
+    [ ReqShowTable <$> pReqShowTable
+    , ReqPickFrom  <$> pReqPickFrom
+    , ReqFindWith  <$> pReqFindWith
+    , ReqExit      <$  pExit
     ]
 
 -- | Verifies if json value is a json string
@@ -114,6 +126,12 @@ extrMulCols :: [Maybe Int] -> JsonValue -> [[JsonValue]]
 extrMulCols ids (JsonArray rows) = foldr ((:).extrCol rows) [] ids
 extrMulCols _ _ = error "invalid operation" -- will not happen
 
+-- | Check if JsonValue is inside another JsonValue
+inside :: JsonValue -> JsonValue -> Bool
+inside j (JsonArray xs) = j `elem` xs
+inside _ _ = False
+
+-- | Pretty printing
 printList :: [JsonValue] -> IO ()
 printList [] = pure ()
 printList (x:xs) = do
@@ -135,7 +153,7 @@ tryApplyReq (ReqShowTable tableName) j@(JsonObject ts) = do
       printList arr
       return j
 
-tryApplyReq (ReqSelectFrom (cols, tr)) j@(JsonObject ts) = do
+tryApplyReq (ReqPickFrom (cols, tr)) j@(JsonObject ts) = do
   let t = findTable tr ts
   case t of
     Nothing -> do
@@ -153,6 +171,17 @@ tryApplyReq (ReqSelectFrom (cols, tr)) j@(JsonObject ts) = do
         printList x
         return j
 
-tryApplyReq (ReqFindWith _) t = pure t
+tryApplyReq (ReqFindWith (tableName, jv)) j@(JsonObject ts) = do
+  let t = findTable tableName ts
+  case t of
+    Nothing -> do
+      putStrLn "invalid request, table not found"
+      return j
+    Just  c -> do
+      let rows = extractArr c
+      let x = filter (inside jv) rows
+      printList x
+      return j
+
 tryApplyReq ReqSetToIn      t = pure t
 tryApplyReq _               t = pure t
