@@ -26,6 +26,7 @@ import Json
   )
 
 data Request = ReqExit
+             | ReqShowTable String
              | ReqSelectFrom ([String], String)
              | ReqFindWith (String, JsonValue)
              | ReqSetToIn
@@ -73,11 +74,16 @@ isDbValid (JsonObject ts) = foldr ((&&).isTableValid) True ts
 isDbValid _ = False
 
 -- | Look up key (table name) in a list of tables
-findIndex :: [(String, JsonValue)] -> String -> Maybe Int
-findIndex [] _     = Nothing
-findIndex ((k0,_):ts) k1
+findIndex :: [JsonValue] -> String -> Maybe Int
+findIndex (JsonString k0:ts) k1
   | k0 == k1  = Just 0
   | otherwise = Just (1+) <*> findIndex ts k1
+findIndex _ _ = Nothing
+
+-- | Extract array from JsonArray
+extractArr :: JsonValue -> [JsonValue]
+extractArr (JsonArray xs) = xs
+extractArr _              = error "invalid operation"
 
 -- | Look up table by key
 findTable :: String -> [(String, JsonValue)] -> Maybe JsonValue
@@ -86,9 +92,10 @@ findTable k0 ((k1,t):ts)
   | k0 == k1  = Just t
   | otherwise = findTable k0 ts
 
+-- | Extract item on a certain index
 extrIndex :: Int -> JsonValue -> JsonValue
 extrIndex i (JsonArray xs) = xs !! i
-extrIndex _ _ = error "invalid operation"
+extrIndex _ _ = error "invalid operation" -- will not happen
 
 -- | Extract certain column from the table
 extrCol :: [JsonValue] -> Maybe Int -> [JsonValue]
@@ -100,24 +107,34 @@ extrMulCols :: [Maybe Int] -> JsonValue -> [[JsonValue]]
 extrMulCols ids (JsonArray rows) = foldr ((:).extrCol rows) [] ids
 extrMulCols _ _ = error "invalid operation" -- will not happen
 
+printList :: [JsonValue] -> IO ()
+printList [] = pure ()
+printList (x:xs) = do
+  print x
+  printList xs
+
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
 tryApplyReq ReqExit t = pure t
 
-tryApplyReq (ReqSelectFrom (cs, t)) j@(JsonObject ts) = do
-  let tb = findTable t ts
-  case tb of
+tryApplyReq (ReqShowTable _) ts = pure ts
+
+tryApplyReq (ReqSelectFrom (cols, tr)) j@(JsonObject ts) = do
+  let t = findTable tr ts
+  case t of
     Nothing -> do
-      putStrLn "invalid request"
+      putStrLn "invalid request, table not found"
       return j
-    Just tx -> do
-      let indices = map (findIndex ts) cs
+    Just c -> do
+      let rows    = extractArr c     -- rows is a list with JsonArrays
+      let indices = map (findIndex (extractArr (head rows))) cols
       let valid   = foldr ((&&).isJust) True indices
       if not valid then do
-        putStrLn "invalid request"
+        putStrLn "invalid request, bad columns"
         return j
       else do      -- columns to be extracted from the (t)able
-        let _ = map (print.JsonArray) (extrMulCols indices tx)
+        let x = map JsonArray (extrMulCols indices c)
+        printList x
         return j
 
 tryApplyReq (ReqFindWith _) t = pure t
