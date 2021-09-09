@@ -25,12 +25,20 @@ import Json
   ( JsonValue(..)
   )
 
-data Request = ReqExit
-             | ReqShowTable String
+data Request = ReqShowTable String
              | ReqSelectFrom ([String], String)
              | ReqFindWith (String, JsonValue)
              | ReqSetToIn
+             | ReqExit
   deriving (Show)
+
+il :: Parser Char
+il = satisfy "is letter" isLetter
+
+pReqShowTable :: Parser String
+pReqShowTable = do
+  _ <- matchToken "show"
+  many1 il
 
 pReqSelectFrom :: Parser ([String], String)
 pReqSelectFrom = do
@@ -40,15 +48,14 @@ pReqSelectFrom = do
   _ <- matchToken "from"
   t <- many1 il
   return (c, t)
-    where
-      il = satisfy "is letter" isLetter
 
 pReq :: Parser Request
 pReq = do
   _ <- pSpaces
   choice "request"
-    [ ReqExit <$ pExit
+    [ ReqShowTable  <$> pReqShowTable
     , ReqSelectFrom <$> pReqSelectFrom
+    , ReqExit       <$  pExit
     ]
 
 -- | Verifies if json value is a json string
@@ -117,7 +124,16 @@ printList (x:xs) = do
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
 tryApplyReq ReqExit t = pure t
 
-tryApplyReq (ReqShowTable _) ts = pure ts
+tryApplyReq (ReqShowTable tableName) j@(JsonObject ts) = do
+  let t = findTable tableName ts
+  case t of
+    Nothing -> do
+      putStrLn "invalid request, table not found"
+      return j
+    Just x  -> do
+      let arr = extractArr x
+      printList arr
+      return j
 
 tryApplyReq (ReqSelectFrom (cols, tr)) j@(JsonObject ts) = do
   let t = findTable tr ts
