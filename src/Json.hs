@@ -26,10 +26,11 @@ data JsonValue = JsonNull
 
 jsval2str :: JsonValue -> String -> String
 jsval2str j "" = show j
-jsval2str j s  = show j <> "," <> s
+jsval2str j s  = show j <> ", " <> s
 
-jsitem2str :: (String, JsonValue) -> String
-jsitem2str (k, v) = show k <> ":" <> show v
+jsitem2str :: (String, JsonValue) -> String -> String
+jsitem2str (k, v) "" = show k <> ":" <> show v
+jsitem2str (k, v) s = show k <> ":" <> show v <> ", " <> s
 
 instance Show JsonValue where
 
@@ -37,8 +38,8 @@ instance Show JsonValue where
   show (JsonBool    b) = if b then "true" else "false"
   show (JsonString  s) = show s
   show (JsonNumber  n) = show n
-  show (JsonArray  xs) = "[" <> foldr jsval2str       "" xs <> "]"
-  show (JsonObject xs) = "{" <> foldr (jsval2str.snd) "" xs <> "}"
+  show (JsonArray  xs) = "[" <> foldr jsval2str  "" xs <> "]"
+  show (JsonObject xs) = "{" <> foldr jsitem2str "" xs <> "}"
 
 -- | Parse Json Value from a given string
 pJsonValue :: Parser JsonValue

@@ -1,33 +1,21 @@
 {
-  "database" : "org",
-  "content"  : [
-    {
-      "table"   : "people",
-      "content" : [
-        ["firstname", "surname", "age"],
-        ["Alice",     "Spark",   25   ],
-        ["Alice",     null,      42   ],
-        ["Bob",       "Johnson", 31   ],
-        ["Carrol",    "Smith",   18   ]
-      ]
-    },
-    {
-      "table"   : "fruits",
-      "content" : [
-        ["color",  "fruit", "price"],
-        ["green",  "apple",   5],
-        ["yellow", "banana", 10],
-        ["yellow", "melon",  20],
-        ["red",    "cherry", 15]
-      ]
-    },
-    {
-      "table" : "likes",
-      "content" : [
-        ["firstname", "fruit" ],
-        ["Alice",     "apple" ],
-        ["Bob",       "cherry"]
-      ]
-    }
+  "people" : [
+    ["firstname", "surname", "age"],
+    ["Alice",     "Spark",   25   ],
+    ["Alice",     null,      42   ],
+    ["Bob",       "Johnson", 31   ],
+    ["Carrol",    "Smith",   18   ]
+  ],
+  "fruits" : [
+    ["color",  "fruit", "price"],
+    ["green",  "apple",  5     ],
+    ["yellow", "banana", 10    ],
+    ["yellow", "melon",  20    ],
+    ["red",    "cherry", 15    ]
+  ],
+  "likes" : [
+    ["firstname", "fruit" ],
+    ["Alice",     "apple" ],
+    ["Bob",       "cherry"]
   ]
 }

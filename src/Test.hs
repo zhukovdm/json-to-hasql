@@ -24,8 +24,8 @@ import Json
   ( pJsonValue
   )
 
-import Sql
-  ( pSqlRequest
+import Request
+  ( pReq
   )
 
 {------------------------------------------------------------------------------}
@@ -82,28 +82,28 @@ import Sql
 {------------------------------------------------------------------------------}
 
 -- >>> run pJsonValue "null"
--- Right JsonNull
+-- Right null
 
 -- >>> run pJsonValue "true"
--- Right (JsonBool True)
+-- Right true
 
 -- >>> run pJsonValue "\"word\""
--- Right (JsonString "word")
+-- Right "word"
 
 -- >>> run pJsonValue "123456"
--- Right (JsonNumber 123456)
+-- Right 123456
 
 -- >>> run pJsonValue "[]"
--- Right (JsonArray [])
+-- Right []
 
 -- >>> run pJsonValue "[null,true,\"a\",0]"
--- Right (JsonArray [JsonNull,JsonBool True,JsonString "a",JsonNumber 0])
+-- Right [null, true, "a", 0]
 
 -- >>> run pJsonValue "{ \"abc\" : true, \"def\" : null }"
--- Right (JsonObject [("abc",JsonBool True),("def",JsonNull)])
+-- Right {"abc":true, "def":null}
 
 {------------------------------------------------------------------------------}
-{- Sql.hs                                                                     -}
+{- Request.hs                                                                 -}
 {------------------------------------------------------------------------------}
 
 

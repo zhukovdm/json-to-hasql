@@ -26,11 +26,11 @@ import Parser
   ( run
   )
 
-import Sql
-  ( SqlRequest(..)
+import Request
+  ( Request(..)
   , isDbValid
   , tryApplyReq
-  , pSqlRequest
+  , pReq
   )
 
 -- | Top-level function
@@ -71,14 +71,14 @@ tryReadDb _ = invalidArgs -- more than one argument
 getReq :: JsonValue -> IO ()
 getReq jv = do
   i <- getLine
-  let r = run pSqlRequest i
+  let r = run pReq i
   case r of
     (Left err) -> do
       _ <- report $ Just $ show err
       getReq jv
     (Right req) -> do
       case req of
-        SqlExit -> writeDb $ show jv
+        ReqExit -> writeDb $ show jv
         _ -> do
           newjv <- tryApplyReq req jv
           getReq newjv
