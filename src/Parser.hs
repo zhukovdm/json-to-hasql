@@ -206,7 +206,7 @@ between left right p = do
   _ <- right
   return r
 
--- | Parse quote inside \"  \", ditto " inside are not allowed
+-- | Parse quote inside \"  \", dittoes inside are not allowed
 pQuote :: Parser String
 pQuote = do
   r <- between (matchChar '"') (matchChar '"') (many notQuote)
