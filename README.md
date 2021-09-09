@@ -46,6 +46,7 @@ The following interaction scheme via command line is implemented.
 - [ ] `radd <items> into <table name>`
 - [ ] `evic <row number> from <table name>`
 - [ ] `tear <col number> from <table name>`
+- [ ] `modi <row> <col> to <json value> in <table name>`
 - [x] `exit`
 
 ## References
