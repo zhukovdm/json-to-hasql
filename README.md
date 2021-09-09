@@ -38,19 +38,15 @@ The following interaction scheme via command line is implemented.
 
 ## Supported request formats
 
-[+] `show <table name>`, ex. `show people`
-
-[+] `pick <col1, col2, ...> from <table name>`, ex. `pick firstname, surname from people`
-
-[+] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
-
-[?] `bulk <json value> to <json value> in <table name>`
-
-[?] `cadd <column name> into <table name>`
-
-[?] `radd <items> into <table name>`
-
-[+] `exit`
+[x] `show <table name>`, ex. `show people`
+[x] `pick <col1, col2, ...> from <table name>`, ex. `pick firstname, surname from people`
+[x] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
+[ ] `bulk <json value> to <json value> in <table name>`
+[ ] `cadd <column name> into <table name>`
+[ ] `radd <items> into <table name>`
+[ ] `evic <row number> from <table name>`
+[ ] `tear <col number> from <table name>`
+[x] `exit`
 
 ## References
 
