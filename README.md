@@ -41,12 +41,12 @@ The following interaction scheme via command line is implemented.
 - [x] `show <table name>`, ex. `show people`
 - [x] `pick <col1, col2, ...> from <table name>`, ex. `pick firstname, surname from people`
 - [x] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
-- [ ] `bulk <json value> to <json value> in <table name>`
-- [ ] `cadd <column name> into <table name>`
-- [ ] `radd <items> into <table name>`
-- [ ] `evic <row number> from <table name>`
-- [ ] `tear <col number> from <table name>`
-- [ ] `modi <row> <col> to <json value> in <table name>`
+- [ ] `bulk <json value> to <json value> in <table name>`, ex. ``
+- [ ] `cadd <column name> into <table name>`, ex. `cadd `
+- [ ] `radd <items> into <table name>`, ex. `radd `
+- [ ] `evic <row> from <table name>`, ex. `evic 1 from fruits`
+- [ ] `yank <col> from <table name>`, ex. `yank 1 from fruits`
+- [ ] `modi <row> <col> to <json value> in <table name>`, ex. `modi 1 1 to null in fruits`
 - [x] `exit`
 
 ## References

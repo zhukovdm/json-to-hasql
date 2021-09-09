@@ -18,7 +18,7 @@ import Parser
   , pSpaces
   , satisfy
   , sepBy
-  , choice
+  , choice, pNumber
   )
 
 import Json
@@ -26,23 +26,28 @@ import Json
   , pJsonValue
   )
 
-data Request = ReqShowTable String
-             | ReqPickFrom ([String], String)   -- columns selection
-             | ReqFindWith (String, JsonValue)  -- rows selection
-             | ReqSetToIn
+data Request = ReqShow String
+             | ReqPick ([String], String)             -- columns selection
+             | ReqFind (String, JsonValue)            -- rows selection
+             | ReqBulk (JsonValue, JsonValue, String) -- bulk change
+             | ReqCadd (String, String)               -- add column
+             | ReqRadd (String, String)               -- add row
+             | ReqEvic (Int, String)                  -- evict row
+             | ReqYank (Int, String)                  -- yank column
+             | ReqModi (Int, Int, JsonValue, String)  -- modify position
              | ReqExit
   deriving (Show)
 
 il :: Parser Char
 il = satisfy "is letter" isLetter
 
-pReqShowTable :: Parser String
-pReqShowTable = do
+pReqShow :: Parser String
+pReqShow = do
   _ <- matchToken "show"
   many1 il
 
-pReqPickFrom :: Parser ([String], String)
-pReqPickFrom = do
+pReqPick :: Parser ([String], String)
+pReqPick = do
   _ <- matchToken "pick"
   c <- many1 il `sepBy` matchToken ","
   _ <- pSpaces
@@ -51,8 +56,8 @@ pReqPickFrom = do
   _ <- pSpaces
   return (c, t)
 
-pReqFindWith :: Parser (String, JsonValue)
-pReqFindWith = do
+pReqFind :: Parser (String, JsonValue)
+pReqFind = do
   _ <- matchToken "find"
   t <- many1 il
   _ <- pSpaces
@@ -60,14 +65,81 @@ pReqFindWith = do
   j <- pJsonValue
   return (t, j)
 
+pReqBulk :: Parser (JsonValue, JsonValue, String)
+pReqBulk = do
+  _  <- matchToken "bulk"
+  fr <- pJsonValue
+  _  <- matchToken "to"
+  to <- pJsonValue
+  _  <- matchToken "in"
+  tb <- many1 il
+  _  <- pSpaces
+  return (fr, to, tb)
+
+pReqCadd :: Parser (String, String)
+pReqCadd = do
+  _ <- matchToken "cadd"
+  c <- many1 il
+  _ <- pSpaces
+  _ <- matchToken "into"
+  t <- many1 il
+  _ <- pSpaces
+  return (c, t)
+
+pReqRadd :: Parser (String, String)
+pReqRadd = do
+  _ <- matchToken "radd"
+  c <- many1 il
+  _ <- pSpaces
+  _ <- matchToken "into"
+  t <- many1 il
+  _ <- pSpaces
+  return (c, t)
+
+pReqEvic :: Parser (Int, String)
+pReqEvic = do
+  _ <- matchToken "evic"
+  n <- pNumber
+  _ <- matchToken "from"
+  t <- many1 il
+  _ <- pSpaces
+  return (n, t)
+
+pReqYank :: Parser (Int, String)
+pReqYank = do
+  _ <- matchToken "yank"
+  n <- pNumber
+  _ <- matchToken "from"
+  t <- many1 il
+  _ <- pSpaces
+  return (n, t)
+
+pReqModi :: Parser (Int, Int, JsonValue, String)
+pReqModi = do
+  _ <- matchToken "modi"
+  r <- pNumber
+  c <- pNumber
+  _ <- matchToken "to"
+  j <- pJsonValue
+  _ <- matchToken "in"
+  t <- many1 il
+  _ <- pSpaces
+  return (r, c, j, t)
+
 pReq :: Parser Request
 pReq = do
   _ <- pSpaces
   choice "request"
-    [ ReqShowTable <$> pReqShowTable
-    , ReqPickFrom  <$> pReqPickFrom
-    , ReqFindWith  <$> pReqFindWith
-    , ReqExit      <$  pExit
+    [ ReqShow <$> pReqShow
+    , ReqPick <$> pReqPick
+    , ReqFind <$> pReqFind
+    , ReqBulk <$> pReqBulk
+    , ReqCadd <$> pReqCadd
+    , ReqRadd <$> pReqRadd
+    , ReqEvic <$> pReqEvic
+    , ReqYank <$> pReqYank
+    , ReqModi <$> pReqModi
+    , ReqExit <$  pExit
     ]
 
 -- | Verifies if json value is a json string
@@ -142,7 +214,7 @@ printList (x:xs) = do
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
 tryApplyReq ReqExit t = pure t
 
-tryApplyReq (ReqShowTable tableName) j@(JsonObject ts) = do
+tryApplyReq (ReqShow tableName) j@(JsonObject ts) = do
   let t = findTable tableName ts
   case t of
     Nothing -> do
@@ -153,7 +225,7 @@ tryApplyReq (ReqShowTable tableName) j@(JsonObject ts) = do
       printList arr
       return j
 
-tryApplyReq (ReqPickFrom (cols, tr)) j@(JsonObject ts) = do
+tryApplyReq (ReqPick (cols, tr)) j@(JsonObject ts) = do
   let t = findTable tr ts
   case t of
     Nothing -> do
@@ -171,7 +243,7 @@ tryApplyReq (ReqPickFrom (cols, tr)) j@(JsonObject ts) = do
         printList x
         return j
 
-tryApplyReq (ReqFindWith (tableName, jv)) j@(JsonObject ts) = do
+tryApplyReq (ReqFind (tableName, jv)) j@(JsonObject ts) = do
   let t = findTable tableName ts
   case t of
     Nothing -> do
@@ -183,5 +255,4 @@ tryApplyReq (ReqFindWith (tableName, jv)) j@(JsonObject ts) = do
       printList x
       return j
 
-tryApplyReq ReqSetToIn      t = pure t
 tryApplyReq _               t = pure t
