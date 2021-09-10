@@ -88,7 +88,6 @@ pReqCadd = do
 pReqRadd :: Parser String
 pReqRadd = do
   _ <- matchToken "radd"
-  _ <- matchToken "into"
   t <- many1 il
   _ <- pSpaces
   return t
@@ -215,9 +214,9 @@ modifyRow _ _ _ = error "invalid operation"
 
 -- | Apply bulk on a Json table
 applyBulk :: String -> JsonValue -> JsonValue -> (String, JsonValue) -> (String, JsonValue)
-applyBulk t0 from to t@(t1, jarr) = do
-  if t0 /= t1 then t
-  else do
+applyBulk t0 from to t@(t1, jarr)
+  | t0 /= t1  = t
+  | otherwise = do
     let (scheme:rows) = extractArr jarr -- array of jsonArrays
     let modifiedRows = map (modifyRow from to) rows
     (t1, JsonArray (scheme:modifiedRows))
@@ -229,9 +228,9 @@ addNull _             = error "invalid operation" -- will not happen
 
 -- | Apply cadd to the particular table
 applyCadd :: JsonValue -> String -> (String, JsonValue) -> (String, JsonValue)
-applyCadd col t0 t@(t1, jarr) = do
-  if t0 /= t1 then t
-  else do
+applyCadd col t0 t@(t1, jarr)
+  | t0 /= t1 = t
+  | otherwise = do
     let rows = extractArr jarr
     let schm = extractArr (head rows)
     if col `elem` schm then t
@@ -241,13 +240,32 @@ applyCadd col t0 t@(t1, jarr) = do
 
 -- | Apply radd to the particular table
 applyRadd :: String -> (String, JsonValue) -> (String, JsonValue)
-applyRadd t0 t@(t1, jarr) = do
-  if t0 /= t1 then t
-  else do
+applyRadd t0 t@(t1, jarr)
+  | t0 /= t1 = t
+  | otherwise = do
     let rows = extractArr jarr
     let schm = extractArr (head rows)
     let newRow = replicate (length schm) JsonNull
     (t1, JsonArray (JsonArray schm : JsonArray newRow : tail rows))
+
+removeElem :: Int -> [a] -> [a]
+removeElem 0 (_:xs) = xs
+removeElem n (x:xs) = x : removeElem (n-1) xs
+removeElem _ []     = []
+
+-- | Apply evic to the particular table
+applyEvic :: String -> Int -> (String, JsonValue) -> (String, JsonValue)
+applyEvic t0 n t@(t1, jarr)
+  | t0 /= t1 || n < 0 = t
+  | otherwise = do
+      let rows = extractArr jarr
+      let schm = head rows
+      let newRows = removeElem n (tail rows)
+      (t1, JsonArray (schm : newRows))
+
+-- | Apply yank to the particular table
+
+-- | Apply modi to the particular table
 
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
@@ -304,6 +322,7 @@ tryApplyReq (ReqCadd (col@(JsonString _), tableName)) (JsonObject ts) = do
 tryApplyReq (ReqRadd tableName) (JsonObject ts) = do
   return $ JsonObject $ map (applyRadd tableName) ts
 
-
+tryApplyReq (ReqEvic (rowNumber, tableName)) (JsonObject ts) = do
+  return $ JsonObject $ map (applyEvic tableName rowNumber) ts
 
 tryApplyReq _               t = pure t
