@@ -264,16 +264,34 @@ applyEvic t0 n t@(t1, jarr)
     (t1, JsonArray (schm : newRows))
 
 -- | Apply yank to the particular table
-applyYank :: String -> Int -> (String,JsonValue) -> (String, JsonValue)
+applyYank :: String -> Int -> (String, JsonValue) -> (String, JsonValue)
 applyYank t0 n t@(t1, jarr)
   | t0 /= t1 || n < 0 = t
   | otherwise = do
-    let rows = extractArr jarr
-    let newRows = map (JsonArray . removeElem n . extractArr) rows
+    let newRows = map (JsonArray . removeElem n . extractArr) (extractArr jarr)
     (t1, JsonArray newRows)
 
--- | Apply modi to the particular table
+setInCol :: Int -> JsonValue -> [JsonValue] -> [JsonValue]
+setInCol 0 to (_:xs) = to:xs
+setInCol n to (x:xs) = x : setInCol (n-1) to xs
+setInCol _ _  []     = []
 
+-- | Traverse table, find particular position and se to default value
+setInRow :: Int -> Int -> JsonValue -> [[JsonValue]] -> [[JsonValue]]
+setInRow 0 c to (x:xs) = setInCol c to x : xs
+setInRow n c to (x:xs) = x : setInRow (n-1) c to xs
+setInRow _ _ _  []     = []
+
+-- | Apply modi to the particular table
+applyModi :: String -> Int -> Int -> JsonValue -> (String, JsonValue) -> (String, JsonValue)
+applyModi t0 r c to t@(t1, jarr)
+  | t0 /= t1 || r < 0 || c < 0 = t
+  | otherwise = do
+    let rawRows = extractArr jarr
+    let oldRows = map extractArr (tail rawRows)
+    let newRows = setInRow r c to oldRows
+    let adjRows = map JsonArray newRows
+    (t1, JsonArray (head rawRows : adjRows))
 
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
@@ -335,5 +353,8 @@ tryApplyReq (ReqEvic (rowNumber, tableName)) (JsonObject ts) = do
 
 tryApplyReq (ReqYank (colNumber, tableName)) (JsonObject ts) = do
   return $ JsonObject $ map (applyYank tableName colNumber) ts
+
+tryApplyReq (ReqModi (r, c, to, tableName)) (JsonObject ts) = do
+  return $ JsonObject $ map (applyModi tableName r c to) ts
 
 tryApplyReq _               t = pure t
