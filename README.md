@@ -43,7 +43,7 @@ The following interaction scheme via command line is implemented.
 - [x] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
 - [x] `bulk <json value> to <json value> in <table name>`, ex. `bulk null to 42 in people`
 - [x] `cadd <column name> into <table name>`, ex. `cadd "taste" into fruits`
-- [ ] `radd <items> into <table name>`, ex. `radd `
+- [x] `radd into <table name>`, ex. `radd into fruits`
 - [ ] `evic <row> from <table name>`, ex. `evic 1 from fruits`
 - [ ] `yank <col> from <table name>`, ex. `yank 1 from fruits`
 - [ ] `modi <row> <col> to <json value> in <table name>`, ex. `modi 1 1 to null in fruits`

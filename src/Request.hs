@@ -239,6 +239,16 @@ applyCadd col t0 t@(t1, jarr) = do
       let newRows = map addNull (tail rows)
       (t1, JsonArray (JsonArray (col:schm) : newRows))
 
+-- | Apply radd to the particular table
+applyRadd :: String -> (String, JsonValue) -> (String, JsonValue)
+applyRadd t0 t@(t1, jarr) = do
+  if t0 /= t1 then t
+  else do
+    let rows = extractArr jarr
+    let schm = extractArr (head rows)
+    let newRow = replicate (length schm) JsonNull
+    (t1, JsonArray (JsonArray schm : JsonArray newRow : tail rows))
+
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
 
@@ -290,5 +300,10 @@ tryApplyReq (ReqBulk (from, to, tableName)) (JsonObject ts) = do
 
 tryApplyReq (ReqCadd (col@(JsonString _), tableName)) (JsonObject ts) = do
   return $ JsonObject $ map (applyCadd col tableName) ts
+
+tryApplyReq (ReqRadd tableName) (JsonObject ts) = do
+  return $ JsonObject $ map (applyRadd tableName) ts
+
+
 
 tryApplyReq _               t = pure t
