@@ -14,7 +14,7 @@ import Parser
   ( Parser
   , many1
   , matchToken
-  , pExit
+  , pQuit
   , pSpaces
   , satisfy
   , sepBy
@@ -35,7 +35,7 @@ data Request = ReqShow String
              | ReqEvic (Int, String)                  -- evict row
              | ReqYank (Int, String)                  -- yank column
              | ReqModi (Int, Int, JsonValue, String)  -- modify position
-             | ReqExit
+             | ReqQuit
   deriving (Show)
 
 il :: Parser Char
@@ -139,7 +139,7 @@ pReq = do
     , ReqEvic <$> pReqEvic
     , ReqYank <$> pReqYank
     , ReqModi <$> pReqModi
-    , ReqExit <$  pExit
+    , ReqQuit <$  pQuit
     ]
 
 -- | Verifies if json value is a json string
@@ -210,9 +210,25 @@ printList (x:xs) = do
   print x
   printList xs
 
+-- | Bulk row modification
+modifyRow :: JsonValue -> JsonValue -> JsonValue -> JsonValue
+modifyRow from to (JsonArray arr) = do
+  JsonArray $ map (\ x -> if x == from then to else x) arr
+modifyRow _ _ _ = error "invalid operation"
+
+-- | Apply bulk on a Json table
+applyBulk :: String -> JsonValue -> JsonValue -> (String, JsonValue) -> (String, JsonValue)
+applyBulk t0 from to i@(t1, jarr) = do
+  if t0 /= t1 then i
+  else do
+    let (scheme:rows) = extractArr jarr -- array of jsonArrays
+    let modifiedRows = map (modifyRow from to) rows
+    (t1, JsonArray (scheme:modifiedRows))
+
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
-tryApplyReq ReqExit t = pure t
+
+tryApplyReq ReqQuit t = pure t
 
 tryApplyReq (ReqShow tableName) j@(JsonObject ts) = do
   let t = findTable tableName ts
@@ -254,5 +270,8 @@ tryApplyReq (ReqFind (tableName, jv)) j@(JsonObject ts) = do
       let x = filter (inside jv) rows
       printList x
       return j
+
+tryApplyReq (ReqBulk (from, to, tableName)) (JsonObject ts) = do
+  return $ JsonObject $ map (applyBulk tableName from to) ts
 
 tryApplyReq _               t = pure t

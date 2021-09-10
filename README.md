@@ -27,9 +27,9 @@ The following interaction scheme via command line is implemented.
     or modify current database. Only valid commands are executed, invalid
     commands are skipped. During interaction, modified database is kept only
     in the **RAM** memory. It is stored on a **HDD** at a time user exits
-    the program via `exit` command.
+    the program via `quit` command.
 
-5.  Once `exit` command is issued by the user and the name of output file is
+5.  Once `quit` command is issued by the user and the name of output file is
     provided, the program tries to store modified database. If file does not
     exist, new file is created. If file is not empty, the content is
     overwritten by modified database. If write operation is not possible,
@@ -41,13 +41,13 @@ The following interaction scheme via command line is implemented.
 - [x] `show <table name>`, ex. `show people`
 - [x] `pick <col1, col2, ...> from <table name>`, ex. `pick firstname, surname from people`
 - [x] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
-- [ ] `bulk <json value> to <json value> in <table name>`, ex. ``
+- [x] `bulk <json value> to <json value> in <table name>`, ex. ``
 - [ ] `cadd <column name> into <table name>`, ex. `cadd `
 - [ ] `radd <items> into <table name>`, ex. `radd `
 - [ ] `evic <row> from <table name>`, ex. `evic 1 from fruits`
 - [ ] `yank <col> from <table name>`, ex. `yank 1 from fruits`
 - [ ] `modi <row> <col> to <json value> in <table name>`, ex. `modi 1 1 to null in fruits`
-- [x] `exit`
+- [x] `quit`
 
 ## References
 

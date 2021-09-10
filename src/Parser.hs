@@ -175,10 +175,10 @@ pNull = do
   _ <- matchToken "null"
   return ()
 
--- | Parse "exit" token
-pExit :: Parser ()
-pExit = do
-  _ <- matchToken "exit"
+-- | Parse "quit" token
+pQuit :: Parser ()
+pQuit = do
+  _ <- matchToken "quit"
   return ()
 
 -- | Parse "true" token

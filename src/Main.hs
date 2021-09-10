@@ -78,7 +78,7 @@ getReq jv = do
       getReq jv
     (Right req) -> do
       case req of
-        ReqExit -> writeDb $ show jv
+        ReqQuit -> writeDb $ show jv
         _ -> do
           newjv <- tryApplyReq req jv
           getReq newjv
