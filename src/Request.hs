@@ -258,14 +258,22 @@ applyEvic :: String -> Int -> (String, JsonValue) -> (String, JsonValue)
 applyEvic t0 n t@(t1, jarr)
   | t0 /= t1 || n < 0 = t
   | otherwise = do
-      let rows = extractArr jarr
-      let schm = head rows
-      let newRows = removeElem n (tail rows)
-      (t1, JsonArray (schm : newRows))
+    let rows = extractArr jarr
+    let schm = head rows
+    let newRows = removeElem n (tail rows)
+    (t1, JsonArray (schm : newRows))
 
 -- | Apply yank to the particular table
+applyYank :: String -> Int -> (String,JsonValue) -> (String, JsonValue)
+applyYank t0 n t@(t1, jarr)
+  | t0 /= t1 || n < 0 = t
+  | otherwise = do
+    let rows = extractArr jarr
+    let newRows = map (JsonArray . removeElem n . extractArr) rows
+    (t1, JsonArray newRows)
 
 -- | Apply modi to the particular table
+
 
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
@@ -324,5 +332,8 @@ tryApplyReq (ReqRadd tableName) (JsonObject ts) = do
 
 tryApplyReq (ReqEvic (rowNumber, tableName)) (JsonObject ts) = do
   return $ JsonObject $ map (applyEvic tableName rowNumber) ts
+
+tryApplyReq (ReqYank (colNumber, tableName)) (JsonObject ts) = do
+  return $ JsonObject $ map (applyYank tableName colNumber) ts
 
 tryApplyReq _               t = pure t
