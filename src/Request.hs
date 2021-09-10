@@ -198,13 +198,6 @@ inside :: JsonValue -> JsonValue -> Bool
 inside j (JsonArray xs) = j `elem` xs
 inside _ _ = False
 
--- | Pretty printing
-printList :: [JsonValue] -> IO ()
-printList [] = pure ()
-printList (x:xs) = do
-  print x
-  printList xs
-
 -- | Bulk row modification
 modifyRow :: JsonValue -> JsonValue -> JsonValue -> JsonValue
 modifyRow from to (JsonArray arr) = do
