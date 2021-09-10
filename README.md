@@ -41,8 +41,8 @@ The following interaction scheme via command line is implemented.
 - [x] `show <table name>`, ex. `show people`
 - [x] `pick <col1, col2, ...> from <table name>`, ex. `pick firstname, surname from people`
 - [x] `find <table name> with <json value>`, ex. `find fruits with "yellow"`
-- [x] `bulk <json value> to <json value> in <table name>`, ex. ``
-- [ ] `cadd <column name> into <table name>`, ex. `cadd `
+- [x] `bulk <json value> to <json value> in <table name>`, ex. `bulk null to 42 in people`
+- [x] `cadd <column name> into <table name>`, ex. `cadd "taste" into fruits`
 - [ ] `radd <items> into <table name>`, ex. `radd `
 - [ ] `evic <row> from <table name>`, ex. `evic 1 from fruits`
 - [ ] `yank <col> from <table name>`, ex. `yank 1 from fruits`

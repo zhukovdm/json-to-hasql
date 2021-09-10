@@ -30,8 +30,8 @@ data Request = ReqShow String
              | ReqPick ([String], String)             -- columns selection
              | ReqFind (String, JsonValue)            -- rows selection
              | ReqBulk (JsonValue, JsonValue, String) -- bulk change
-             | ReqCadd (String, String)               -- add column
-             | ReqRadd (String, String)               -- add row
+             | ReqCadd (JsonValue, String)            -- add column
+             | ReqRadd String                         -- add row
              | ReqEvic (Int, String)                  -- evict row
              | ReqYank (Int, String)                  -- yank column
              | ReqModi (Int, Int, JsonValue, String)  -- modify position
@@ -76,25 +76,22 @@ pReqBulk = do
   _  <- pSpaces
   return (fr, to, tb)
 
-pReqCadd :: Parser (String, String)
+pReqCadd :: Parser (JsonValue, String)
 pReqCadd = do
   _ <- matchToken "cadd"
-  c <- many1 il
-  _ <- pSpaces
+  c <- pJsonValue
   _ <- matchToken "into"
   t <- many1 il
   _ <- pSpaces
   return (c, t)
 
-pReqRadd :: Parser (String, String)
+pReqRadd :: Parser String
 pReqRadd = do
   _ <- matchToken "radd"
-  c <- many1 il
-  _ <- pSpaces
   _ <- matchToken "into"
   t <- many1 il
   _ <- pSpaces
-  return (c, t)
+  return t
 
 pReqEvic :: Parser (Int, String)
 pReqEvic = do
@@ -218,12 +215,29 @@ modifyRow _ _ _ = error "invalid operation"
 
 -- | Apply bulk on a Json table
 applyBulk :: String -> JsonValue -> JsonValue -> (String, JsonValue) -> (String, JsonValue)
-applyBulk t0 from to i@(t1, jarr) = do
-  if t0 /= t1 then i
+applyBulk t0 from to t@(t1, jarr) = do
+  if t0 /= t1 then t
   else do
     let (scheme:rows) = extractArr jarr -- array of jsonArrays
     let modifiedRows = map (modifyRow from to) rows
     (t1, JsonArray (scheme:modifiedRows))
+
+-- | Add JsonNull into each table row
+addNull :: JsonValue -> JsonValue
+addNull (JsonArray r) = JsonArray (JsonNull:r)
+addNull _             = error "invalid operation" -- will not happen
+
+-- | Apply cadd to the particular table
+applyCadd :: JsonValue -> String -> (String, JsonValue) -> (String, JsonValue)
+applyCadd col t0 t@(t1, jarr) = do
+  if t0 /= t1 then t
+  else do
+    let rows = extractArr jarr
+    let schm = extractArr (head rows)
+    if col `elem` schm then t
+    else do
+      let newRows = map addNull (tail rows)
+      (t1, JsonArray (JsonArray (col:schm) : newRows))
 
 -- | Try to apply well-formed request and return new database
 tryApplyReq :: Request -> JsonValue -> IO JsonValue
@@ -273,5 +287,8 @@ tryApplyReq (ReqFind (tableName, jv)) j@(JsonObject ts) = do
 
 tryApplyReq (ReqBulk (from, to, tableName)) (JsonObject ts) = do
   return $ JsonObject $ map (applyBulk tableName from to) ts
+
+tryApplyReq (ReqCadd (col@(JsonString _), tableName)) (JsonObject ts) = do
+  return $ JsonObject $ map (applyCadd col tableName) ts
 
 tryApplyReq _               t = pure t
