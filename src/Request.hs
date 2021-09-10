@@ -151,7 +151,7 @@ isRowValid _ _              = False
 -- | Verifies if table is valid
 isTableValid :: (String, JsonValue) -> Bool
 isTableValid (_:_, JsonArray ((JsonArray cols):xs)) =
-  all isValidJsStr cols && foldr ((&&).isRowValid (length cols)) True xs
+  all isValidJsStr cols && all (isRowValid $ length cols) xs
 isTableValid _ = False
 
 -- | Traverse the input Json structure to verify scheme
