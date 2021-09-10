@@ -140,7 +140,7 @@ pReq = do
 
 -- | Verifies if json value is a json string
 isValidJsStr :: JsonValue -> Bool
-isValidJsStr (JsonString js) = foldr ((&&).isLetter) True js
+isValidJsStr (JsonString js) = all isLetter js
 isValidJsStr _               = False
 
 -- | Verify only length of a row, no explicit types
@@ -151,13 +151,12 @@ isRowValid _ _              = False
 -- | Verifies if table is valid
 isTableValid :: (String, JsonValue) -> Bool
 isTableValid (_:_, JsonArray ((JsonArray cols):xs)) =
-  foldr ((&&).isValidJsStr) True cols &&
-  foldr ((&&).isRowValid (length cols)) True xs
+  all isValidJsStr cols && foldr ((&&).isRowValid (length cols)) True xs
 isTableValid _ = False
 
 -- | Traverse the input Json structure to verify scheme
 isDbValid :: JsonValue -> Bool
-isDbValid (JsonObject ts) = foldr ((&&).isTableValid) True ts
+isDbValid (JsonObject ts) = all isTableValid ts
 isDbValid _ = False
 
 -- | Look up key (table name) in a list of tables
@@ -306,7 +305,7 @@ tryApplyReq (ReqShow tableName) j@(JsonObject ts) = do
       return j
     Just x  -> do
       let arr = extractArr x
-      printList arr
+      mapM_ print arr
       return j
 
 tryApplyReq (ReqPick (cols, tr)) j@(JsonObject ts) = do
@@ -318,13 +317,13 @@ tryApplyReq (ReqPick (cols, tr)) j@(JsonObject ts) = do
     Just c -> do
       let rows    = extractArr c     -- rows is a list with JsonArrays
       let indices = map (findIndex (extractArr (head rows))) cols
-      let valid   = foldr ((&&).isJust) True indices
+      let valid   = all isJust indices
       if not valid then do
         putStrLn "invalid request, bad columns"
         return j
       else do      -- columns to be extracted from the (t)able
         let x = map JsonArray (extrMulCols indices c)
-        printList x
+        mapM_ print x
         return j
 
 tryApplyReq (ReqFind (tableName, jv)) j@(JsonObject ts) = do
@@ -336,7 +335,7 @@ tryApplyReq (ReqFind (tableName, jv)) j@(JsonObject ts) = do
     Just  c -> do
       let rows = extractArr c
       let x = filter (inside jv) rows
-      printList x
+      mapM_ print x
       return j
 
 tryApplyReq (ReqBulk (from, to, tableName)) (JsonObject ts) = do
